@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Users, MapPin, Edit, Trash2 } from "lucide-react"
+import { AddTableModal } from "@/components/add-table-modal"
+import { EditTableModal } from "@/components/edit-table-modal"
 import { useState } from "react"
 
-const mockTables = [
+const initialTables = [
     {
         id: "1",
         number: 1,
@@ -92,11 +94,34 @@ const mockTables = [
 ]
 
 export default function TablesPage() {
-    const [tables] = useState(mockTables)
+    const [tables, setTables] = useState(initialTables)
+
+    const handleAddTable = (newTable: any) => {
+        const table = {
+            ...newTable,
+            id: (tables.length + 1).toString(),
+            assigned: 0,
+            status: "empty" as const,
+            guests: [],
+            number: parseInt(newTable.number),
+            capacity: parseInt(newTable.capacity),
+        }
+        setTables([...tables, table])
+    }
+
+    const handleUpdateTable = (updatedTable: any) => {
+        setTables(tables.map((t) => (t.id === updatedTable.id ? updatedTable : t)))
+    }
+
+    const handleDeleteTable = (id: string) => {
+        if (confirm("¿Estás seguro de que deseas eliminar esta mesa?")) {
+            setTables(tables.filter((t) => t.id !== id))
+        }
+    }
 
     const totalCapacity = tables.reduce((acc, table) => acc + table.capacity, 0)
     const totalAssigned = tables.reduce((acc, table) => acc + table.assigned, 0)
-    const occupancyRate = ((totalAssigned / totalCapacity) * 100).toFixed(1)
+    const occupancyRate = totalCapacity > 0 ? ((totalAssigned / totalCapacity) * 100).toFixed(1) : "0"
 
     return (
         <main className="flex-1 overflow-y-auto">
@@ -106,10 +131,7 @@ export default function TablesPage() {
                         <h1 className="text-2xl font-bold text-foreground">Gestión de Mesas</h1>
                         <p className="text-sm text-muted-foreground">Organiza la distribución de invitados por mesa</p>
                     </div>
-                    <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Añadir Mesa
-                    </Button>
+                    <AddTableModal onAddTable={handleAddTable} />
                 </div>
             </div>
 
@@ -190,11 +212,13 @@ export default function TablesPage() {
                                 )}
 
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" className="flex-1 gap-1 bg-transparent">
-                                        <Edit className="h-3 w-3" />
-                                        Editar
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="gap-1 text-destructive bg-transparent">
+                                    <EditTableModal table={table} onUpdateTable={handleUpdateTable} />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1 text-destructive bg-transparent"
+                                        onClick={() => handleDeleteTable(table.id)}
+                                    >
                                         <Trash2 className="h-3 w-3" />
                                     </Button>
                                 </div>

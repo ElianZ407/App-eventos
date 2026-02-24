@@ -1,8 +1,9 @@
-import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, UtensilsCrossed, Settings, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { LayoutDashboard, Users, UtensilsCrossed, Settings, Calendar, ChevronLeft, ChevronRight, Moon, Sun, LogOut } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
+import { useTheme } from "./theme-provider"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -15,6 +16,13 @@ export function EventSidebar() {
   const location = useLocation()
   const pathname = location.pathname
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem("user")
+    navigate("/login")
+  }
 
   return (
     <div
@@ -62,6 +70,30 @@ export function EventSidebar() {
         })}
       </nav>
 
+      <div className={cn("px-4 pb-4 space-y-2", isCollapsed && "flex flex-col items-center")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "w-full justify-start gap-3 text-muted-foreground hover:bg-secondary hover:text-foreground",
+            isCollapsed && "justify-center px-0 w-10"
+          )}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {theme === "dark" ? (
+            <>
+              <Sun className="h-5 w-5 shrink-0" />
+              {!isCollapsed && <span>Modo Claro</span>}
+            </>
+          ) : (
+            <>
+              <Moon className="h-5 w-5 shrink-0" />
+              {!isCollapsed && <span>Modo Oscuro</span>}
+            </>
+          )}
+        </Button>
+      </div>
+
       <div className={cn("border-t border-border p-4", isCollapsed && "flex justify-center")}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
@@ -73,7 +105,17 @@ export function EventSidebar() {
               <p className="truncate text-xs text-muted-foreground">john@eventflow.com</p>
             </div>
           )}
+          {!isCollapsed && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
         </div>
+        {isCollapsed && (
+          <Button variant="ghost" size="icon" className="mt-2 h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   )

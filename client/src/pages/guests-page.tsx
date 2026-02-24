@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, Search, MoreHorizontal, Mail, Phone, Edit, Trash2 } from "lucide-react"
+import { AddGuestModal } from "@/components/add-guest-modal"
+import { EditGuestModal } from "@/components/edit-guest-modal"
 import { useState } from "react"
 
 type GuestStatus = "confirmed" | "pending" | "cancelled"
@@ -19,7 +21,7 @@ interface Guest {
     table?: string
 }
 
-const mockGuests: Guest[] = [
+const initialGuests: Guest[] = [
     {
         id: "1",
         name: "Ana García Martínez",
@@ -93,9 +95,35 @@ const statusConfig: Record<GuestStatus, { label: string; variant: "default" | "s
 }
 
 export default function GuestsPage() {
+    const [guests, setGuests] = useState<Guest[]>(initialGuests)
     const [searchQuery, setSearchQuery] = useState("")
+    const [editingGuest, setEditingGuest] = useState<Guest | null>(null)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
-    const filteredGuests = mockGuests.filter(
+    const handleAddGuest = (newGuest: Omit<Guest, "id">) => {
+        const guest: Guest = {
+            ...newGuest,
+            id: (guests.length + 1).toString(),
+        }
+        setGuests([...guests, guest])
+    }
+
+    const handleUpdateGuest = (updatedGuest: Guest) => {
+        setGuests(guests.map((g) => (g.id === updatedGuest.id ? updatedGuest : g)))
+    }
+
+    const handleDeleteGuest = (id: string) => {
+        if (confirm("¿Estás seguro de que deseas eliminar a este invitado?")) {
+            setGuests(guests.filter((g) => g.id !== id))
+        }
+    }
+
+    const openEditModal = (guest: Guest) => {
+        setEditingGuest(guest)
+        setIsEditModalOpen(true)
+    }
+
+    const filteredGuests = guests.filter(
         (guest) =>
             guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             guest.email.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -118,10 +146,7 @@ export default function GuestsPage() {
                         <h1 className="text-2xl font-bold text-foreground">Invitados</h1>
                         <p className="text-sm text-muted-foreground">Gestiona tu lista de invitados y su estado</p>
                     </div>
-                    <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Añadir Invitado
-                    </Button>
+                    <AddGuestModal onAddGuest={handleAddGuest} />
                 </div>
             </div>
 
@@ -139,15 +164,15 @@ export default function GuestsPage() {
                     <div className="flex gap-2">
                         <Badge variant="outline" className="gap-1 px-3 py-1">
                             <span className="h-2 w-2 rounded-full bg-green-600" />
-                            Confirmados: {mockGuests.filter((g) => g.status === "confirmed").length}
+                            Confirmados: {guests.filter((g) => g.status === "confirmed").length}
                         </Badge>
                         <Badge variant="outline" className="gap-1 px-3 py-1">
                             <span className="h-2 w-2 rounded-full bg-yellow-600" />
-                            Pendientes: {mockGuests.filter((g) => g.status === "pending").length}
+                            Pendientes: {guests.filter((g) => g.status === "pending").length}
                         </Badge>
                         <Badge variant="outline" className="gap-1 px-3 py-1">
                             <span className="h-2 w-2 rounded-full bg-red-600" />
-                            Cancelados: {mockGuests.filter((g) => g.status === "cancelled").length}
+                            Cancelados: {guests.filter((g) => g.status === "cancelled").length}
                         </Badge>
                     </div>
                 </div>
@@ -192,7 +217,7 @@ export default function GuestsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem className="gap-2">
+                                                <DropdownMenuItem className="gap-2" onClick={() => openEditModal(guest)}>
                                                     <Edit className="h-4 w-4" />
                                                     Editar
                                                 </DropdownMenuItem>
@@ -204,7 +229,7 @@ export default function GuestsPage() {
                                                     <Phone className="h-4 w-4" />
                                                     Llamar
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
+                                                <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onClick={() => handleDeleteGuest(guest.id)}>
                                                     <Trash2 className="h-4 w-4" />
                                                     Eliminar
                                                 </DropdownMenuItem>
@@ -223,6 +248,13 @@ export default function GuestsPage() {
                     </div>
                 )}
             </div>
+
+            <EditGuestModal
+                guest={editingGuest}
+                open={isEditModalOpen}
+                onOpenChange={setIsEditModalOpen}
+                onUpdateGuest={handleUpdateGuest}
+            />
         </main>
     )
 }

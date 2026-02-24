@@ -12,6 +12,10 @@ import GuestsPage from './pages/guests-page'
 import TablesPage from './pages/tables-page'
 import EventDetailPage from './pages/event-detail-page'
 import NewEventPage from './pages/new-event-page'
+import LoginPage from './pages/login-page'
+import RegisterPage from './pages/register-page'
+
+import { ThemeProvider } from './components/theme-provider'
 
 const mockEvents = [
     {
@@ -91,21 +95,35 @@ function Dashboard() {
 
 function App() {
     return (
-        <Router>
-            <div className="flex min-h-screen bg-background text-foreground overflow-hidden">
-                <EventSidebar />
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/guests" element={<GuestsPage />} />
-                        <Route path="/tables" element={<TablesPage />} />
-                        <Route path="/events/:id" element={<EventDetailPage />} />
-                        <Route path="/new-event" element={<NewEventPage />} />
-                        <Route path="/settings" element={<div className="p-8">Configuración (Próximamente)</div>} />
-                    </Routes>
-                </div>
-            </div>
-        </Router>
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+            <Router>
+                <Routes>
+                    {/* Auth Routes (No Sidebar) */}
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+
+                    {/* App Routes (With Sidebar) */}
+                    <Route
+                        path="/*"
+                        element={
+                            <div className="flex min-h-screen bg-background text-foreground overflow-hidden">
+                                <EventSidebar />
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    <Routes>
+                                        <Route path="/" element={<Dashboard />} />
+                                        <Route path="/guests" element={<GuestsPage />} />
+                                        <Route path="/tables" element={<TablesPage />} />
+                                        <Route path="/events/:id" element={<EventDetailPage />} />
+                                        <Route path="/new-event" element={<NewEventPage />} />
+                                        <Route path="/settings" element={<div className="p-8">Configuración (Próximamente)</div>} />
+                                    </Routes>
+                                </div>
+                            </div>
+                        }
+                    />
+                </Routes>
+            </Router>
+        </ThemeProvider>
     )
 }
 
