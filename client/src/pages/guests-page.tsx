@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Search, MoreHorizontal, Mail, Phone, Edit, Trash2 } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Mail, Edit, Trash2 } from "lucide-react"
 import { AddGuestModal } from "@/components/add-guest-modal"
 import { EditGuestModal } from "@/components/edit-guest-modal"
+import { ConfirmDeleteModal } from "@/components/confirm-delete-modal"
 import { useState } from "react"
 
 type GuestStatus = "confirmed" | "pending" | "cancelled"
@@ -99,6 +100,8 @@ export default function GuestsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [editingGuest, setEditingGuest] = useState<Guest | null>(null)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [guestToDelete, setGuestToDelete] = useState<string | null>(null)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
     const handleAddGuest = (newGuest: Omit<Guest, "id">) => {
         const guest: Guest = {
@@ -112,10 +115,17 @@ export default function GuestsPage() {
         setGuests(guests.map((g) => (g.id === updatedGuest.id ? updatedGuest : g)))
     }
 
-    const handleDeleteGuest = (id: string) => {
-        if (confirm("¿Estás seguro de que deseas eliminar a este invitado?")) {
-            setGuests(guests.filter((g) => g.id !== id))
+    const confirmDeleteGuest = () => {
+        if (guestToDelete) {
+            setGuests(guests.filter((g) => g.id !== guestToDelete))
+            setGuestToDelete(null)
+            setIsDeleteModalOpen(false)
         }
+    }
+
+    const handleDeleteClick = (id: string) => {
+        setGuestToDelete(id)
+        setIsDeleteModalOpen(true)
     }
 
     const openEditModal = (guest: Guest) => {
@@ -225,11 +235,10 @@ export default function GuestsPage() {
                                                     <Mail className="h-4 w-4" />
                                                     Enviar Email
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2">
-                                                    <Phone className="h-4 w-4" />
-                                                    Llamar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onClick={() => handleDeleteGuest(guest.id)}>
+                                                <DropdownMenuItem
+                                                    className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                                                    onClick={() => handleDeleteClick(guest.id)}
+                                                >
                                                     <Trash2 className="h-4 w-4" />
                                                     Eliminar
                                                 </DropdownMenuItem>
@@ -254,6 +263,14 @@ export default function GuestsPage() {
                 open={isEditModalOpen}
                 onOpenChange={setIsEditModalOpen}
                 onUpdateGuest={handleUpdateGuest}
+            />
+
+            <ConfirmDeleteModal
+                title={`¿Eliminar a ${guests.find(g => g.id === guestToDelete)?.name || 'este invitado'}?`}
+                description="Esta acción es permanente y no se podrá deshacer. El invitado será removido de su mesa asignada."
+                onConfirm={confirmDeleteGuest}
+                open={isDeleteModalOpen}
+                onOpenChange={setIsDeleteModalOpen}
             />
         </main>
     )

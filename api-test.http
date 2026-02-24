@@ -1,0 +1,16 @@
+### Pruebas de API de Eventos
+
+# @name testEmail
+POST http://localhost:3001/api/test-email
+Content-Type: application/json
+
+{
+  "guestName": "Juan Pérez",
+  "eventName": "Gran Boda Real",
+  "guestEmail": "elianzurita18@gmail.com"
+}
+
+###
+
+# @name getEvents
+GET http://localhost:3001/api/eventos

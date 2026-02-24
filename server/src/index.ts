@@ -1,57 +1,31 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import path from 'path';
 
-dotenv.config();
+// Configurar dotenv para buscar el archivo en la raíz del proyecto
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+import authRoutes from './routes/auth-routes';
+import eventoRoutes from './routes/evento-routes';
+import invitadoRoutes from './routes/invitado-routes';
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-// Basic Route
+// Main Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/eventos', eventoRoutes);
+app.use('/api/invitados', invitadoRoutes);
+
+// Compatibility alias (for previous test route)
+app.use('/api/test-email', invitadoRoutes);
+
 app.get('/', (req, res) => {
-    res.send('Eventos API is running');
-});
-
-// Auth Routes - Placeholder for manual JWT auth
-app.post('/api/auth/register', async (req, res) => {
-    try {
-        const { email, password, name } = req.body;
-        // TODO: Hash password and save to DB
-        res.status(501).json({ message: 'Registration not implemented yet' });
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        // TODO: Verify credentials and return JWT
-        res.status(501).json({ message: 'Login not implemented yet' });
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Event Routes
-app.get('/api/events', async (req, res) => {
-    try {
-        const events = await prisma.event.findMany({
-            include: {
-                guests: true,
-                tables: true,
-            },
-        });
-        res.json(events);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to fetch events' });
-    }
+    res.send('EventFlow API is running in Spanish (Modulized version)');
 });
 
 // Start Server

@@ -14,6 +14,7 @@ import EventDetailPage from './pages/event-detail-page'
 import NewEventPage from './pages/new-event-page'
 import LoginPage from './pages/login-page'
 import RegisterPage from './pages/register-page'
+import ProfilePage from './pages/profile-page'
 
 import { ThemeProvider } from './components/theme-provider'
 
@@ -115,7 +116,7 @@ function App() {
                                         <Route path="/tables" element={<TablesPage />} />
                                         <Route path="/events/:id" element={<EventDetailPage />} />
                                         <Route path="/new-event" element={<NewEventPage />} />
-                                        <Route path="/settings" element={<div className="p-8">Configuración (Próximamente)</div>} />
+                                        <Route path="/profile" element={<ProfilePage />} />
                                     </Routes>
                                 </div>
                             </div>

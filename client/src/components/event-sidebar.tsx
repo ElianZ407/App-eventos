@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Users, UtensilsCrossed, Settings, Calendar, ChevronLeft, ChevronRight, Moon, Sun, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, UtensilsCrossed, Calendar, ChevronLeft, ChevronRight, Moon, Sun, LogOut, User } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
@@ -9,7 +9,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Invitados", href: "/guests", icon: Users },
   { name: "Mesas", href: "/tables", icon: UtensilsCrossed },
-  { name: "Configuración", href: "/settings", icon: Settings },
+  { name: "Perfil", href: "/profile", icon: User },
 ]
 
 export function EventSidebar() {

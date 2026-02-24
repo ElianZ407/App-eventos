@@ -3,15 +3,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, ArrowRight, Check } from "lucide-react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
-type Step = 1 | 2 | 3
+const EVENT_TYPES = [
+    "Boda",
+    "XV Años",
+    "Cumpleaños",
+    "Bautizo",
+    "Graduación",
+    "Conferencia",
+    "Corporativo",
+    "Fiesta Privada",
+    "Otro"
+]
 
 export default function NewEventPage() {
     const [currentStep, setCurrentStep] = useState<Step>(1)
+    const [eventType, setEventType] = useState("")
     const navigate = useNavigate();
 
     const steps = [
@@ -128,7 +140,18 @@ export default function NewEventPage() {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="event-type">Tipo de Evento *</Label>
-                                        <Input id="event-type" placeholder="Ej: Boda, Conferencia, Cumpleaños..." />
+                                        <Select value={eventType} onValueChange={setEventType}>
+                                            <SelectTrigger id="event-type">
+                                                <SelectValue placeholder="Selecciona el tipo de evento" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {EVENT_TYPES.map((type) => (
+                                                    <SelectItem key={type} value={type}>
+                                                        {type}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
 
                                     <div className="space-y-2">
@@ -136,16 +159,9 @@ export default function NewEventPage() {
                                         <Textarea id="event-description" placeholder="Describe tu evento..." rows={4} />
                                     </div>
 
-                                    <div className="grid gap-6 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="total-guests">Total de Invitados *</Label>
-                                            <Input id="total-guests" type="number" placeholder="200" />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="budget">Presupuesto (€) *</Label>
-                                            <Input id="budget" type="number" placeholder="50000" />
-                                        </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="total-guests">Total de Invitados *</Label>
+                                        <Input id="total-guests" type="number" placeholder="200" className="max-w-[200px]" />
                                     </div>
                                 </>
                             )}
@@ -224,10 +240,7 @@ export default function NewEventPage() {
                                         />
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="website">Sitio Web del Evento</Label>
-                                        <Input id="website" type="url" placeholder="https://..." />
-                                    </div>
+                                    {/* Website field removed */}
                                 </>
                             )}
                         </CardContent>

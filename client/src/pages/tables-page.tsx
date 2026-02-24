@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Users, MapPin, Edit, Trash2 } from "lucide-react"
 import { AddTableModal } from "@/components/add-table-modal"
 import { EditTableModal } from "@/components/edit-table-modal"
+import { ConfirmDeleteModal } from "@/components/confirm-delete-modal"
 import { useState } from "react"
 
 const initialTables = [
@@ -213,14 +214,20 @@ export default function TablesPage() {
 
                                 <div className="flex gap-2">
                                     <EditTableModal table={table} onUpdateTable={handleUpdateTable} />
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-1 text-destructive bg-transparent"
-                                        onClick={() => handleDeleteTable(table.id)}
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
+                                    <ConfirmDeleteModal
+                                        title={`¿Eliminar Mesa ${table.number}?`}
+                                        description="Esta acción eliminará la mesa y desasignará a todos los invitados que estén en ella actualmente."
+                                        onConfirm={() => setTables(tables.filter((t) => t.id !== table.id))}
+                                        trigger={
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="gap-1 text-destructive bg-transparent"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        }
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
