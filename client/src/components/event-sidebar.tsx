@@ -5,19 +5,39 @@ import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
 import { useTheme } from "./theme-provider"
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Invitados", href: "/guests", icon: Users },
-  { name: "Mesas", href: "/tables", icon: UtensilsCrossed },
-  { name: "Perfil", href: "/profile", icon: User },
-]
-
 export function EventSidebar() {
   const location = useLocation()
   const pathname = location.pathname
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
+  const [user, setUser] = useState<{ name?: string, email?: string } | null>(null)
+
+  useState(() => {
+    const stored = localStorage.getItem("user")
+    if (stored) {
+      setUser(JSON.parse(stored))
+    }
+  })
+
+  // Intentar extraer el ID del evento de la URL si estamos en una página de evento
+  const eventMatch = pathname.match(/\/events\/([^\/]+)/)
+  const eventId = eventMatch ? eventMatch[1] : null
+
+  const navigation = [
+    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    {
+      name: "Invitados",
+      href: eventId ? `/events/${eventId}/guests` : "/guests",
+      icon: Users
+    },
+    {
+      name: "Mesas",
+      href: eventId ? `/events/${eventId}/tables` : "/tables",
+      icon: UtensilsCrossed
+    },
+    { name: "Perfil", href: "/profile", icon: User },
+  ]
 
   const handleLogout = () => {
     localStorage.removeItem("user")
@@ -97,12 +117,12 @@ export function EventSidebar() {
       <div className={cn("border-t border-border p-4", isCollapsed && "flex justify-center")}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-            JD
+            {user?.name?.substring(0, 2).toUpperCase() || "U"}
           </div>
           {!isCollapsed && (
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium text-foreground">John Doe</p>
-              <p className="truncate text-xs text-muted-foreground">john@eventflow.com</p>
+              <p className="text-sm font-medium text-foreground">{user?.name || "Usuario"}</p>
+              <p className="truncate text-xs text-muted-foreground">{user?.email || "usuario@eventflow.com"}</p>
             </div>
           )}
           {!isCollapsed && (

@@ -1,3 +1,6 @@
+import api from "@/lib/api"
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -8,125 +11,107 @@ import { Plus, Search, MoreHorizontal, Mail, Edit, Trash2 } from "lucide-react"
 import { AddGuestModal } from "@/components/add-guest-modal"
 import { EditGuestModal } from "@/components/edit-guest-modal"
 import { ConfirmDeleteModal } from "@/components/confirm-delete-modal"
-import { useState } from "react"
 
-type GuestStatus = "confirmed" | "pending" | "cancelled"
+type GuestStatus = "confirmado" | "pendiente" | "cancelado"
 
 interface Guest {
-    id: string
-    name: string
+    id: number
+    nombre: string
     email: string
-    phone: string
-    status: GuestStatus
-    avatar?: string
-    table?: string
+    telefono: string
+    estado: GuestStatus
+    mesa?: { numero: number } | string
 }
 
-const initialGuests: Guest[] = [
-    {
-        id: "1",
-        name: "Ana García Martínez",
-        email: "ana.garcia@email.com",
-        phone: "+34 612 345 678",
-        status: "confirmed",
-        table: "Mesa 5",
-    },
-    {
-        id: "2",
-        name: "Carlos López Fernández",
-        email: "carlos.lopez@email.com",
-        phone: "+34 623 456 789",
-        status: "confirmed",
-        table: "Mesa 3",
-    },
-    {
-        id: "3",
-        name: "María Rodríguez Sánchez",
-        email: "maria.rodriguez@email.com",
-        phone: "+34 634 567 890",
-        status: "pending",
-        table: "Mesa 8",
-    },
-    {
-        id: "4",
-        name: "David Martín González",
-        email: "david.martin@email.com",
-        phone: "+34 645 678 901",
-        status: "confirmed",
-        table: "Mesa 2",
-    },
-    {
-        id: "5",
-        name: "Laura Pérez Ruiz",
-        email: "laura.perez@email.com",
-        phone: "+34 656 789 012",
-        status: "cancelled",
-        table: "-",
-    },
-    {
-        id: "6",
-        name: "Javier Sánchez Torres",
-        email: "javier.sanchez@email.com",
-        phone: "+34 667 890 123",
-        status: "pending",
-        table: "Mesa 12",
-    },
-    {
-        id: "7",
-        name: "Elena Jiménez Castro",
-        email: "elena.jimenez@email.com",
-        phone: "+34 678 901 234",
-        status: "confirmed",
-        table: "Mesa 7",
-    },
-    {
-        id: "8",
-        name: "Miguel Ángel Díaz Moreno",
-        email: "miguel.diaz@email.com",
-        phone: "+34 689 012 345",
-        status: "confirmed",
-        table: "Mesa 4",
-    },
-]
-
 const statusConfig: Record<GuestStatus, { label: string; variant: "default" | "secondary" | "destructive" }> = {
-    confirmed: { label: "Confirmado", variant: "default" },
-    pending: { label: "Pendiente", variant: "secondary" },
-    cancelled: { label: "Cancelado", variant: "destructive" },
+    confirmado: { label: "Confirmado", variant: "default" },
+    pendiente: { label: "Pendiente", variant: "secondary" },
+    cancelado: { label: "Cancelado", variant: "destructive" },
 }
 
 export default function GuestsPage() {
-    const [guests, setGuests] = useState<Guest[]>(initialGuests)
+    const { id: eventoId } = useParams<{ id: string }>();
+    const [guests, setGuests] = useState<Guest[]>([])
+    const [tables, setTables] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [editingGuest, setEditingGuest] = useState<Guest | null>(null)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-    const [guestToDelete, setGuestToDelete] = useState<string | null>(null)
+    const [guestToDelete, setGuestToDelete] = useState<number | null>(null)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
-    const handleAddGuest = (newGuest: Omit<Guest, "id">) => {
-        const guest: Guest = {
-            ...newGuest,
-            id: (guests.length + 1).toString(),
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!eventoId) return;
+            try {
+                const [guestsRes, tablesRes] = await Promise.all([
+                    api.get(`/invitados/${eventoId}`),
+                    api.get(`/mesas/${eventoId}`)
+                ])
+                setGuests(Array.isArray(guestsRes.data) ? guestsRes.data : [])
+                setTables(Array.isArray(tablesRes.data) ? tablesRes.data : [])
+            } catch (error) {
+                console.error("Error fetching data:", error)
+            } finally {
+                setIsLoading(false)
+            }
         }
-        setGuests([...guests, guest])
+
+        fetchData()
+    }, [eventoId])
+
+    const handleAddGuest = async (newGuest: any) => {
+        try {
+            const response = await api.post("/invitados", {
+                ...newGuest,
+                eventoId
+            })
+            setGuests([...guests, response.data])
+        } catch (error) {
+            console.error("Error adding guest:", error)
+            alert("Error al añadir invitado")
+        }
     }
 
-    const handleUpdateGuest = (updatedGuest: Guest) => {
-        setGuests(guests.map((g) => (g.id === updatedGuest.id ? updatedGuest : g)))
+    const handleUpdateGuest = async (updatedGuest: any) => {
+        try {
+            const response = await api.put(`/invitados/${updatedGuest.id}`, updatedGuest)
+            setGuests(guests.map((g) => (g.id === updatedGuest.id ? response.data : g)))
+        } catch (error) {
+            console.error("Error updating guest:", error)
+            alert("Error al actualizar invitado")
+        }
     }
 
-    const confirmDeleteGuest = () => {
+    const confirmDeleteGuest = async () => {
         if (guestToDelete) {
-            setGuests(guests.filter((g) => g.id !== guestToDelete))
-            setGuestToDelete(null)
-            setIsDeleteModalOpen(false)
+            try {
+                await api.delete(`/invitados/${guestToDelete}`)
+                setGuests(guests.filter((g) => g.id !== guestToDelete))
+                setGuestToDelete(null)
+                setIsDeleteModalOpen(false)
+            } catch (error) {
+                console.error("Error deleting guest:", error)
+                alert("Error al eliminar invitado")
+            }
         }
     }
 
-    const handleDeleteClick = (id: string) => {
+    const handleSendInvitation = async (guestId: number) => {
+        try {
+            const response = await api.post("/invitados/enviar-invitacion", { invitadoId: guestId })
+            alert(response.data.message || "Invitación enviada")
+        } catch (error) {
+            console.error("Error sending invitation:", error)
+            alert("Error al enviar la invitación")
+        }
+    }
+
+    const handleDeleteClick = (id: number) => {
         setGuestToDelete(id)
         setIsDeleteModalOpen(true)
     }
+
 
     const openEditModal = (guest: Guest) => {
         setEditingGuest(guest)
@@ -135,12 +120,13 @@ export default function GuestsPage() {
 
     const filteredGuests = guests.filter(
         (guest) =>
-            guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            guest.email.toLowerCase().includes(searchQuery.toLowerCase()),
+            (guest.nombre?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+            (guest.email?.toLowerCase() || "").includes(searchQuery.toLowerCase()),
     )
 
-    const getInitials = (name: string) => {
-        return name
+    const getInitials = (nombre: string) => {
+        if (!nombre) return "??";
+        return nombre
             .split(" ")
             .map((n) => n[0])
             .join("")
@@ -156,7 +142,7 @@ export default function GuestsPage() {
                         <h1 className="text-2xl font-bold text-foreground">Invitados</h1>
                         <p className="text-sm text-muted-foreground">Gestiona tu lista de invitados y su estado</p>
                     </div>
-                    <AddGuestModal onAddGuest={handleAddGuest} />
+                    <AddGuestModal onAddGuest={handleAddGuest} tables={tables} />
                 </div>
             </div>
 
@@ -174,15 +160,15 @@ export default function GuestsPage() {
                     <div className="flex gap-2">
                         <Badge variant="outline" className="gap-1 px-3 py-1">
                             <span className="h-2 w-2 rounded-full bg-green-600" />
-                            Confirmados: {guests.filter((g) => g.status === "confirmed").length}
+                            Confirmados: {guests.filter((g) => g.estado === "confirmado").length}
                         </Badge>
                         <Badge variant="outline" className="gap-1 px-3 py-1">
                             <span className="h-2 w-2 rounded-full bg-yellow-600" />
-                            Pendientes: {guests.filter((g) => g.status === "pending").length}
+                            Pendientes: {guests.filter((g) => g.estado === "pendiente").length}
                         </Badge>
                         <Badge variant="outline" className="gap-1 px-3 py-1">
                             <span className="h-2 w-2 rounded-full bg-red-600" />
-                            Cancelados: {guests.filter((g) => g.status === "cancelled").length}
+                            Cancelados: {guests.filter((g) => g.estado === "cancelado").length}
                         </Badge>
                     </div>
                 </div>
@@ -205,20 +191,24 @@ export default function GuestsPage() {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-9 w-9">
-                                                <AvatarImage src={guest.avatar || "/placeholder.svg"} />
+                                                <AvatarImage src={"/placeholder.svg"} />
                                                 <AvatarFallback className="bg-primary/10 text-primary">
-                                                    {getInitials(guest.name)}
+                                                    {getInitials(guest.nombre)}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <span className="font-medium text-foreground">{guest.name}</span>
+                                            <span className="font-medium text-foreground">{guest.nombre}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground italic md:not-italic">{guest.email}</TableCell>
-                                    <TableCell className="text-muted-foreground hidden md:table-cell">{guest.phone}</TableCell>
+                                    <TableCell className="text-muted-foreground hidden md:table-cell">{guest.telefono}</TableCell>
                                     <TableCell>
-                                        <Badge variant={statusConfig[guest.status].variant}>{statusConfig[guest.status].label}</Badge>
+                                        <Badge variant={(statusConfig[guest.estado] || statusConfig.pendiente).variant}>
+                                            {(statusConfig[guest.estado] || statusConfig.pendiente).label}
+                                        </Badge>
                                     </TableCell>
-                                    <TableCell className="font-medium text-foreground">{guest.table}</TableCell>
+                                    <TableCell className="font-medium text-foreground">
+                                        {guest.mesa && typeof guest.mesa === 'object' ? `Mesa ${guest.mesa.numero}` : guest.mesa || "-"}
+                                    </TableCell>
                                     <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -231,13 +221,16 @@ export default function GuestsPage() {
                                                     <Edit className="h-4 w-4" />
                                                     Editar
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2">
+                                                <DropdownMenuItem className="gap-2" onClick={() => handleSendInvitation(guest.id)}>
                                                     <Mail className="h-4 w-4" />
                                                     Enviar Email
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     className="gap-2 text-destructive focus:text-destructive cursor-pointer"
-                                                    onClick={() => handleDeleteClick(guest.id)}
+                                                    onClick={() => {
+                                                        setGuestToDelete(Number(guest.id))
+                                                        setIsDeleteModalOpen(true)
+                                                    }}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                     Eliminar
@@ -253,7 +246,7 @@ export default function GuestsPage() {
 
                 {filteredGuests.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-12">
-                        <p className="text-muted-foreground">No se encontraron invitados</p>
+                        <p className="text-muted-foreground">{isLoading ? "Cargando..." : "No se encontraron invitados"}</p>
                     </div>
                 )}
             </div>
@@ -263,10 +256,11 @@ export default function GuestsPage() {
                 open={isEditModalOpen}
                 onOpenChange={setIsEditModalOpen}
                 onUpdateGuest={handleUpdateGuest}
+                tables={tables}
             />
 
             <ConfirmDeleteModal
-                title={`¿Eliminar a ${guests.find(g => g.id === guestToDelete)?.name || 'este invitado'}?`}
+                title={`¿Eliminar a ${guests.find(g => g.id === guestToDelete)?.nombre || 'este invitado'}?`}
                 description="Esta acción es permanente y no se podrá deshacer. El invitado será removido de su mesa asignada."
                 onConfirm={confirmDeleteGuest}
                 open={isDeleteModalOpen}

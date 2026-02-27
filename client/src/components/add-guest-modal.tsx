@@ -22,30 +22,29 @@ import { useState } from "react"
 
 interface AddGuestModalProps {
     onAddGuest?: (guest: any) => void
+    tables?: any[]
 }
 
-export function AddGuestModal({ onAddGuest }: AddGuestModalProps) {
+export function AddGuestModal({ onAddGuest, tables = [] }: AddGuestModalProps) {
     const [open, setOpen] = useState(false)
     const [formData, setFormData] = useState({
-        name: "",
+        nombre: "",
         email: "",
-        phone: "",
-        status: "pending",
-        table: "",
+        telefono: "",
+        estado: "pendiente",
+        mesaId: "",
     })
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        // Here you would normally call an API
-        console.log("Adding guest:", formData)
         if (onAddGuest) onAddGuest(formData)
         setOpen(false)
         setFormData({
-            name: "",
+            nombre: "",
             email: "",
-            phone: "",
-            status: "pending",
-            table: "",
+            telefono: "",
+            estado: "pendiente",
+            mesaId: "",
         })
     }
 
@@ -66,13 +65,13 @@ export function AddGuestModal({ onAddGuest }: AddGuestModalProps) {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
+                        <Label htmlFor="nombre" className="text-right">
                             Nombre
                         </Label>
                         <Input
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            id="nombre"
+                            value={formData.nombre}
+                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                             className="col-span-3"
                             placeholder="Nombre completo"
                             required
@@ -93,52 +92,53 @@ export function AddGuestModal({ onAddGuest }: AddGuestModalProps) {
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="phone" className="text-right">
+                        <Label htmlFor="telefono" className="text-right">
                             Teléfono
                         </Label>
                         <Input
-                            id="phone"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            id="telefono"
+                            value={formData.telefono}
+                            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                             className="col-span-3"
                             placeholder="+34 600 000 000"
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="status" className="text-right">
+                        <Label htmlFor="estado" className="text-right">
                             Estado
                         </Label>
                         <Select
-                            value={formData.status}
-                            onValueChange={(value) => setFormData({ ...formData, status: value })}
+                            value={formData.estado}
+                            onValueChange={(value) => setFormData({ ...formData, estado: value })}
                         >
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Selecciona un estado" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="confirmed">Confirmado</SelectItem>
-                                <SelectItem value="pending">Pendiente</SelectItem>
-                                <SelectItem value="cancelled">Cancelado</SelectItem>
+                                <SelectItem value="confirmado">Confirmado</SelectItem>
+                                <SelectItem value="pendiente">Pendiente</SelectItem>
+                                <SelectItem value="cancelado">Cancelado</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="table" className="text-right">
+                        <Label htmlFor="mesaId" className="text-right">
                             Mesa
                         </Label>
                         <Select
-                            value={formData.table}
-                            onValueChange={(value) => setFormData({ ...formData, table: value })}
+                            value={formData.mesaId}
+                            onValueChange={(value) => setFormData({ ...formData, mesaId: value })}
                         >
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Asignar mesa" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Mesa 1">Mesa 1</SelectItem>
-                                <SelectItem value="Mesa 2">Mesa 2</SelectItem>
-                                <SelectItem value="Mesa 3">Mesa 3</SelectItem>
-                                <SelectItem value="Mesa 4">Mesa 4</SelectItem>
-                                <SelectItem value="Sin asignar">Sin asignar</SelectItem>
+                                <SelectItem value="none">Sin asignar</SelectItem>
+                                {tables.map((table) => (
+                                    <SelectItem key={table.id} value={table.id.toString()}>
+                                        Mesa {table.numero} - {table.ubicacion || "Sin ubicación"}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

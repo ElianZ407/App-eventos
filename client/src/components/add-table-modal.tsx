@@ -20,21 +20,19 @@ interface AddTableModalProps {
 export function AddTableModal({ onAddTable }: AddTableModalProps) {
     const [open, setOpen] = useState(false)
     const [formData, setFormData] = useState({
-        number: "",
-        capacity: "",
-        location: "",
+        numero: "",
+        capacidad: "",
+        ubicacion: "",
     })
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        // Here you would normally call an API
-        console.log("Adding table:", formData)
         if (onAddTable) onAddTable(formData)
         setOpen(false)
         setFormData({
-            number: "",
-            capacity: "",
-            location: "",
+            numero: "",
+            capacidad: "",
+            ubicacion: "",
         })
     }
 
@@ -55,41 +53,41 @@ export function AddTableModal({ onAddTable }: AddTableModalProps) {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="number" className="text-right">
+                        <Label htmlFor="numero" className="text-right">
                             Número
                         </Label>
                         <Input
-                            id="number"
+                            id="numero"
                             type="number"
-                            value={formData.number}
-                            onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+                            value={formData.numero}
+                            onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                             className="col-span-3"
                             placeholder="Ej: 1"
                             required
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="capacity" className="text-right">
+                        <Label htmlFor="capacidad" className="text-right">
                             Capacidad
                         </Label>
                         <Input
-                            id="capacity"
+                            id="capacidad"
                             type="number"
-                            value={formData.capacity}
-                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                            value={formData.capacidad}
+                            onChange={(e) => setFormData({ ...formData, capacidad: e.target.value })}
                             className="col-span-3"
                             placeholder="Número de personas"
                             required
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="location" className="text-right">
+                        <Label htmlFor="ubicacion" className="text-right">
                             Ubicación
                         </Label>
                         <Input
-                            id="location"
-                            value={formData.location}
-                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                            id="ubicacion"
+                            value={formData.ubicacion}
+                            onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
                             className="col-span-3"
                             placeholder="Ej: Salón Principal - Centro"
                             required

@@ -61,3 +61,50 @@ export const login = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al iniciar sesión' });
     }
 };
+
+export const getPerfil = async (req: any, res: Response) => {
+    try {
+        const usuarioId = req.usuario?.id;
+        const usuario = await prisma.usuario.findUnique({
+            where: { id: usuarioId },
+            select: {
+                id: true,
+                nombre: true,
+                email: true,
+                rol: true,
+                telefono: true
+            }
+        });
+        res.json(usuario);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener el perfil' });
+    }
+};
+
+export const updatePerfil = async (req: any, res: Response) => {
+    try {
+        const usuarioId = req.usuario?.id;
+        const { nombre, email, telefono, rol } = req.body;
+
+        const usuarioActualizado = await prisma.usuario.update({
+            where: { id: usuarioId },
+            data: {
+                nombre,
+                email,
+                telefono,
+                rol
+            },
+            select: {
+                id: true,
+                nombre: true,
+                email: true,
+                rol: true,
+                telefono: true
+            }
+        });
+
+        res.json(usuarioActualizado);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al actualizar el perfil' });
+    }
+};

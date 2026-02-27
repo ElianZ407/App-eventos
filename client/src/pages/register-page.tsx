@@ -5,21 +5,33 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Calendar, Mail, Lock, User, ArrowRight } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import api from "@/lib/api"
 
 export default function RegisterPage() {
     const navigate = useNavigate()
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
-        // Simulate API call
-        setTimeout(() => {
+        setError(null)
+
+        const formData = new FormData(e.currentTarget as HTMLFormElement)
+        const nombre = formData.get("name") as string
+        const email = formData.get("email") as string
+        const password = formData.get("password") as string
+
+        try {
+            await api.post("/auth/register", { nombre, email, password })
+            // Redirigir al login después de un registro exitoso
+            navigate("/login?registered=true")
+        } catch (err: any) {
+            console.error(err)
+            setError(err.response?.data?.error || "Error al crear la cuenta. Inténtalo de nuevo.")
+        } finally {
             setIsLoading(false)
-            // In a real app, you'd save a token here
-            localStorage.setItem("user", JSON.stringify({ name: "Nuevo Usuario", email: "user@example.com" }))
-            navigate("/")
-        }, 1000)
+        }
     }
 
     return (
@@ -43,12 +55,18 @@ export default function RegisterPage() {
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4 pt-8">
+                        {error && (
+                            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md mb-4 border border-destructive/20 text-center animate-shake">
+                                {error}
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor="name">Nombre Completo</Label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     id="name"
+                                    name="name"
                                     placeholder="Tu nombre aquí"
                                     className="pl-10"
                                     required
@@ -61,6 +79,7 @@ export default function RegisterPage() {
                                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     id="email"
+                                    name="email"
                                     type="email"
                                     placeholder="nombre@ejemplo.com"
                                     className="pl-10"
@@ -74,6 +93,7 @@ export default function RegisterPage() {
                                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     id="password"
+                                    name="password"
                                     type="password"
                                     className="pl-10"
                                     placeholder="••••••••"

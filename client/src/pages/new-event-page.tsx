@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import api from "@/lib/api"
 
 const EVENT_TYPES = [
     "Boda",
@@ -21,10 +22,70 @@ const EVENT_TYPES = [
     "Otro"
 ]
 
+type Step = 1 | 2 | 3
+
 export default function NewEventPage() {
     const [currentStep, setCurrentStep] = useState<Step>(1)
-    const [eventType, setEventType] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate();
+
+    // Form states
+    const [formData, setFormData] = useState({
+        nombre: "",
+        fecha: "",
+        hora: "",
+        tipo: "Otro",
+        descripcion: "",
+        totalInvitados: 0,
+        lugarNombre: "",
+        direccion: "",
+        ciudad: "",
+        codigoPostal: "",
+        pais: "España",
+        lugarTelefono: "",
+        puntoReferencia: "",
+        nombreOrganizador: "",
+        emailOrganizador: "",
+        telefonoOrganizador: "",
+        codigoVestimenta: "",
+        notasEspeciales: ""
+    })
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target
+        const fieldMap: { [key: string]: string } = {
+            'event-name': 'nombre',
+            'event-date': 'fecha',
+            'event-time': 'hora',
+            'event-description': 'descripcion',
+            'total-guests': 'totalInvitados',
+            'venue-name': 'lugarNombre',
+            'address': 'direccion',
+            'city': 'ciudad',
+            'postal-code': 'codigoPostal',
+            'country': 'pais',
+            'venue-phone': 'lugarTelefono',
+            'parking': 'puntoReferencia',
+            'organizer-name': 'nombreOrganizador',
+            'organizer-email': 'emailOrganizador',
+            'organizer-phone': 'telefonoOrganizador',
+            'dress-code': 'codigoVestimenta',
+            'special-notes': 'notasEspeciales'
+        }
+
+        const field = fieldMap[id]
+        if (field) {
+            setFormData(prev => ({
+                ...prev,
+                [field]: field === 'totalInvitados' ? Number(value) : value
+            }))
+        }
+    }
+
+    const setEventType = (value: string) => {
+        setFormData(prev => ({ ...prev, tipo: value }))
+    }
 
     const steps = [
         { number: 1, title: "Información Básica", description: "Datos principales del evento" },
@@ -44,10 +105,18 @@ export default function NewEventPage() {
         }
     }
 
-    const handleCreate = () => {
-        // In a real app, send data to the API
-        console.log("Evento creado");
-        navigate("/");
+    const handleCreate = async () => {
+        setIsLoading(true)
+        setError(null)
+        try {
+            await api.post("/eventos", formData)
+            navigate("/")
+        } catch (err: any) {
+            console.error(err)
+            setError(err.response?.data?.error || "Error al crear el evento")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -119,28 +188,51 @@ export default function NewEventPage() {
                             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
+                            {error && (
+                                <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md border border-destructive/20 text-center">
+                                    {error}
+                                </div>
+                            )}
                             {currentStep === 1 && (
                                 <>
                                     <div className="space-y-2">
                                         <Label htmlFor="event-name">Nombre del Evento *</Label>
-                                        <Input id="event-name" placeholder="Ej: Boda García-López" />
+                                        <Input
+                                            id="event-name"
+                                            placeholder="Ej: Boda García-López"
+                                            value={formData.nombre}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
                                     </div>
 
                                     <div className="grid gap-6 sm:grid-cols-2">
                                         <div className="space-y-2">
                                             <Label htmlFor="event-date">Fecha del Evento *</Label>
-                                            <Input id="event-date" type="date" />
+                                            <Input
+                                                id="event-date"
+                                                type="date"
+                                                value={formData.fecha}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
                                         </div>
 
                                         <div className="space-y-2">
                                             <Label htmlFor="event-time">Hora *</Label>
-                                            <Input id="event-time" type="time" />
+                                            <Input
+                                                id="event-time"
+                                                type="time"
+                                                value={formData.hora}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="event-type">Tipo de Evento *</Label>
-                                        <Select value={eventType} onValueChange={setEventType}>
+                                        <Select value={formData.tipo} onValueChange={setEventType}>
                                             <SelectTrigger id="event-type">
                                                 <SelectValue placeholder="Selecciona el tipo de evento" />
                                             </SelectTrigger>
@@ -156,12 +248,26 @@ export default function NewEventPage() {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="event-description">Descripción</Label>
-                                        <Textarea id="event-description" placeholder="Describe tu evento..." rows={4} />
+                                        <Textarea
+                                            id="event-description"
+                                            placeholder="Describe tu evento..."
+                                            rows={4}
+                                            value={formData.descripcion}
+                                            onChange={handleInputChange}
+                                        />
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="total-guests">Total de Invitados *</Label>
-                                        <Input id="total-guests" type="number" placeholder="200" className="max-w-[200px]" />
+                                        <Input
+                                            id="total-guests"
+                                            type="number"
+                                            placeholder="200"
+                                            className="max-w-[200px]"
+                                            value={formData.totalInvitados}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
                                     </div>
                                 </>
                             )}
@@ -170,39 +276,76 @@ export default function NewEventPage() {
                                 <>
                                     <div className="space-y-2">
                                         <Label htmlFor="venue-name">Nombre del Lugar *</Label>
-                                        <Input id="venue-name" placeholder="Ej: Hacienda San José" />
+                                        <Input
+                                            id="venue-name"
+                                            placeholder="Ej: Hacienda San José"
+                                            value={formData.lugarNombre}
+                                            onChange={handleInputChange}
+                                        />
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="address">Dirección Completa *</Label>
-                                        <Input id="address" placeholder="Calle, número, piso..." />
+                                        <Input
+                                            id="address"
+                                            placeholder="Calle, número, piso..."
+                                            value={formData.direccion}
+                                            onChange={handleInputChange}
+                                        />
                                     </div>
 
                                     <div className="grid gap-6 sm:grid-cols-3">
                                         <div className="space-y-2">
                                             <Label htmlFor="city">Ciudad *</Label>
-                                            <Input id="city" placeholder="Madrid" />
+                                            <Input
+                                                id="city"
+                                                placeholder="Madrid"
+                                                value={formData.ciudad}
+                                                onChange={handleInputChange}
+                                            />
                                         </div>
 
                                         <div className="space-y-2">
                                             <Label htmlFor="postal-code">Código Postal *</Label>
-                                            <Input id="postal-code" placeholder="28001" />
+                                            <Input
+                                                id="postal-code"
+                                                placeholder="28001"
+                                                value={formData.codigoPostal}
+                                                onChange={handleInputChange}
+                                            />
                                         </div>
 
                                         <div className="space-y-2">
                                             <Label htmlFor="country">País *</Label>
-                                            <Input id="country" placeholder="España" />
+                                            <Input
+                                                id="country"
+                                                placeholder="España"
+                                                value={formData.pais}
+                                                onChange={handleInputChange}
+                                            />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="venue-phone">Teléfono del Lugar</Label>
-                                        <Input id="venue-phone" type="tel" placeholder="+34 912 345 678" />
+                                        <Input
+                                            id="venue-phone"
+                                            type="tel"
+                                            placeholder="+34 912 345 678"
+                                            value={formData.lugarTelefono}
+                                            onChange={handleInputChange}
+                                        />
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="parking">Información de Parking</Label>
-                                        <Textarea id="parking" placeholder="Detalles sobre estacionamiento, acceso, etc..." rows={3} />
+                                        <Textarea
+                                            id="parking"
+                                            placeholder="Detalles sobre estacionamiento, acceso, etc..."
+                                            rows={3}
+                                            value={formData.puntoReferencia}
+                                            onChange={handleInputChange}
+                                        />
                                     </div>
                                 </>
                             )}
@@ -211,24 +354,46 @@ export default function NewEventPage() {
                                 <>
                                     <div className="space-y-2">
                                         <Label htmlFor="organizer-name">Nombre del Organizador *</Label>
-                                        <Input id="organizer-name" placeholder="Tu nombre" />
+                                        <Input
+                                            id="organizer-name"
+                                            placeholder="Tu nombre"
+                                            value={formData.nombreOrganizador}
+                                            onChange={handleInputChange}
+                                        />
                                     </div>
 
                                     <div className="grid gap-6 sm:grid-cols-2">
                                         <div className="space-y-2">
                                             <Label htmlFor="organizer-email">Email de Contacto *</Label>
-                                            <Input id="organizer-email" type="email" placeholder="email@ejemplo.com" />
+                                            <Input
+                                                id="organizer-email"
+                                                type="email"
+                                                placeholder="email@ejemplo.com"
+                                                value={formData.emailOrganizador}
+                                                onChange={handleInputChange}
+                                            />
                                         </div>
 
                                         <div className="space-y-2">
                                             <Label htmlFor="organizer-phone">Teléfono de Contacto *</Label>
-                                            <Input id="organizer-phone" type="tel" placeholder="+34 612 345 678" />
+                                            <Input
+                                                id="organizer-phone"
+                                                type="tel"
+                                                placeholder="+34 612 345 678"
+                                                value={formData.telefonoOrganizador}
+                                                onChange={handleInputChange}
+                                            />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="dress-code">Código de Vestimenta</Label>
-                                        <Input id="dress-code" placeholder="Ej: Formal, Semi-formal, Casual..." />
+                                        <Input
+                                            id="dress-code"
+                                            placeholder="Ej: Formal, Semi-formal, Casual..."
+                                            value={formData.codigoVestimenta}
+                                            onChange={handleInputChange}
+                                        />
                                     </div>
 
                                     <div className="space-y-2">
@@ -237,6 +402,8 @@ export default function NewEventPage() {
                                             id="special-notes"
                                             placeholder="Requisitos especiales, alergias, restricciones dietéticas..."
                                             rows={4}
+                                            value={formData.notasEspeciales}
+                                            onChange={handleInputChange}
                                         />
                                     </div>
 
@@ -259,9 +426,13 @@ export default function NewEventPage() {
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         ) : (
-                            <Button className="gap-2" onClick={handleCreate}>
-                                <Check className="h-4 w-4" />
-                                Crear Evento
+                            <Button className="gap-2" onClick={handleCreate} disabled={isLoading}>
+                                {isLoading ? (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></div>
+                                ) : (
+                                    <Check className="h-4 w-4" />
+                                )}
+                                {isLoading ? "Creando..." : "Crear Evento"}
                             </Button>
                         )}
                     </div>

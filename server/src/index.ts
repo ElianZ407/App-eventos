@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import dns from 'node:dns';
+
+// Forzar a Node.js a preferir IPv4 sobre IPv6 (Corrige errores ENETUNREACH/ENOTFOUND)
+dns.setDefaultResultOrder('ipv4first');
 
 // Configurar dotenv para buscar el archivo en la raíz del proyecto
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -9,6 +13,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import authRoutes from './routes/auth-routes';
 import eventoRoutes from './routes/evento-routes';
 import invitadoRoutes from './routes/invitado-routes';
+import mesaRoutes from './routes/mesa-routes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,6 +25,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/eventos', eventoRoutes);
 app.use('/api/invitados', invitadoRoutes);
+app.use('/api/mesas', mesaRoutes);
 
 // Compatibility alias (for previous test route)
 app.use('/api/test-email', invitadoRoutes);

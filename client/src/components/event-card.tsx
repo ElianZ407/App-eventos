@@ -15,7 +15,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ id, name, date, location, confirmedGuests, totalGuests, status }: EventCardProps) {
-  const progress = (confirmedGuests / totalGuests) * 100
+  const progress = totalGuests > 0 ? (confirmedGuests / totalGuests) * 100 : 0
 
   return (
     <Link to={`/events/${id}`}>

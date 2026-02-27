@@ -5,21 +5,35 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Calendar, Mail, Lock, ArrowRight } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import api from "@/lib/api"
 
 export default function LoginPage() {
     const navigate = useNavigate()
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false)
-            // In a real app, you'd save a token here
-            localStorage.setItem("user", JSON.stringify({ name: "John Doe", email: "john@eventflow.com" }))
+        setError(null)
+
+        const formData = new FormData(e.currentTarget as HTMLFormElement)
+        const email = formData.get("email") as string
+        const password = formData.get("password") as string
+
+        try {
+            const response = await api.post("/auth/login", { email, password })
+            const { token, usuario } = response.data
+
+            // Guardamos el token y la info del usuario
+            localStorage.setItem("user", JSON.stringify({ ...usuario, token }))
             navigate("/")
-        }, 1000)
+        } catch (err: any) {
+            console.error(err)
+            setError(err.response?.data?.error || "Error al iniciar sesión. Inténtalo de nuevo.")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -43,12 +57,18 @@ export default function LoginPage() {
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4 pt-8">
+                        {error && (
+                            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md mb-4 border border-destructive/20 text-center animate-shake">
+                                {error}
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     id="email"
+                                    name="email"
                                     type="email"
                                     placeholder="nombre@ejemplo.com"
                                     className="pl-10"
@@ -67,6 +87,7 @@ export default function LoginPage() {
                                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     id="password"
+                                    name="password"
                                     type="password"
                                     className="pl-10"
                                     required

@@ -1,11 +1,10 @@
-import { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { EventSidebar } from './components/event-sidebar'
 import { Button } from "./components/ui/button"
 import { Input } from "./components/ui/input"
 import { Plus, Search } from "lucide-react"
 import { EventCard } from "./components/event-card"
-import { Link } from 'react-router-dom'
 
 // Import New Pages
 import GuestsPage from './pages/guests-page'
@@ -18,34 +17,78 @@ import ProfilePage from './pages/profile-page'
 
 import { ThemeProvider } from './components/theme-provider'
 
-const mockEvents = [
-    {
-        id: "1",
-        name: "Boda Anual García-López",
-        date: "15 Mayo 2024",
-        location: "Hacienda San José, Madrid",
-        confirmedGuests: 145,
-        totalGuests: 200,
-        status: "active" as const,
-    },
-    {
-        id: "2",
-        name: "Conferencia Tech Summit",
-        date: "22 Junio 2024",
-        location: "Centro de Convenciones, Barcelona",
-        confirmedGuests: 320,
-        totalGuests: 500,
-        status: "upcoming" as const,
-    },
-];
+import api from './lib/api'
+
+// Utility to validate session
+const isAuthenticated = () => {
+    try {
+        const user = localStorage.getItem("user");
+        if (!user || user === "undefined" || user === "null") return false;
+        const parsed = JSON.parse(user);
+        return !!parsed.token;
+    } catch (e) {
+        return false;
+    }
+};
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    const navigate = useNavigate();
+    const loggedIn = isAuthenticated();
+
+    useEffect(() => {
+        if (!loggedIn) {
+            navigate("/login");
+        }
+    }, [loggedIn, navigate]);
+
+    if (!loggedIn) return null;
+    return <>{children}</>;
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+    const navigate = useNavigate();
+    const loggedIn = isAuthenticated();
+
+    useEffect(() => {
+        if (loggedIn) {
+            navigate("/");
+        }
+    }, [loggedIn, navigate]);
+
+    if (loggedIn) return null;
+    return <>{children}</>;
+};
 
 function Dashboard() {
     const [searchQuery, setSearchQuery] = useState("")
+    const [events, setEvents] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const navigate = useNavigate();
 
-    const filteredEvents = mockEvents.filter(
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const response = await api.get('/eventos')
+                setEvents(response.data)
+                console.log("Events fetched:", response.data)
+            } catch (error) {
+                console.error("Error fetching events:", error)
+                if ((error as any).response?.status === 401) {
+                    localStorage.removeItem("user")
+                    navigate("/login")
+                }
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchEvents()
+    }, [navigate])
+
+    const filteredEvents = events.filter(
         (event) =>
-            event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            event.location.toLowerCase().includes(searchQuery.toLowerCase()),
+            event.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (event.lugarNombre && event.lugarNombre.toLowerCase().includes(searchQuery.toLowerCase())),
     )
 
     return (
@@ -78,15 +121,33 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredEvents.map((event) => (
-                        <EventCard key={event.id} {...event} />
-                    ))}
-                </div>
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                ) : (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {filteredEvents.map((event) => (
+                            <EventCard
+                                key={event.id}
+                                id={event.id}
+                                name={event.nombre}
+                                date={new Date(event.fecha).toLocaleDateString()}
+                                location={event.lugarNombre || "Sin ubicación"}
+                                confirmedGuests={event.invitados?.filter((i: any) => i.estado === 'confirmado').length || 0}
+                                totalGuests={event.totalInvitados}
+                                status={event.estado === 'pasado' ? 'completed' : (event.estado === 'proximo' ? 'upcoming' : 'active')}
+                            />
+                        ))}
+                    </div>
+                )}
 
-                {filteredEvents.length === 0 && (
+                {!isLoading && filteredEvents.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-12">
                         <p className="text-muted-foreground">No se encontraron eventos</p>
+                        <Link to="/new-event" className="mt-4">
+                            <Button variant="outline">Crear tu primer evento</Button>
+                        </Link>
                     </div>
                 )}
             </div>
@@ -94,32 +155,38 @@ function Dashboard() {
     );
 }
 
+
 function App() {
     return (
         <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
             <Router>
                 <Routes>
-                    {/* Auth Routes (No Sidebar) */}
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
+                    {/* Auth Routes (No Sidebar) - Redirect if already logged in */}
+                    <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                    <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-                    {/* App Routes (With Sidebar) */}
+                    {/* App Routes (With Sidebar) - Protect these routes */}
                     <Route
                         path="/*"
                         element={
-                            <div className="flex min-h-screen bg-background text-foreground overflow-hidden">
-                                <EventSidebar />
-                                <div className="flex-1 flex flex-col overflow-hidden">
-                                    <Routes>
-                                        <Route path="/" element={<Dashboard />} />
-                                        <Route path="/guests" element={<GuestsPage />} />
-                                        <Route path="/tables" element={<TablesPage />} />
-                                        <Route path="/events/:id" element={<EventDetailPage />} />
-                                        <Route path="/new-event" element={<NewEventPage />} />
-                                        <Route path="/profile" element={<ProfilePage />} />
-                                    </Routes>
+                            <ProtectedRoute>
+                                <div className="flex min-h-screen bg-background text-foreground overflow-hidden">
+                                    <EventSidebar />
+                                    <div className="flex-1 flex flex-col overflow-hidden">
+                                        <Routes>
+                                            <Route path="/" element={<Dashboard />} />
+                                            <Route path="/events/:id" element={<EventDetailPage />} />
+                                            <Route path="/events/:id/guests" element={<GuestsPage />} />
+                                            <Route path="/events/:id/tables" element={<TablesPage />} />
+                                            <Route path="/new-event" element={<NewEventPage />} />
+                                            <Route path="/profile" element={<ProfilePage />} />
+                                            {/* Fallbacks */}
+                                            <Route path="/guests" element={<div className="p-8">Por favor, selecciona un evento del Dashboard primero.</div>} />
+                                            <Route path="/tables" element={<div className="p-8">Por favor, selecciona un evento del Dashboard primero.</div>} />
+                                        </Routes>
+                                    </div>
                                 </div>
-                            </div>
+                            </ProtectedRoute>
                         }
                     />
                 </Routes>

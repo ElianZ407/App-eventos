@@ -6,38 +6,82 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { User, Mail, Phone, Camera, Shield, Save } from "lucide-react"
 import { useState, useEffect } from "react"
+import api from "@/lib/api"
 
 export default function ProfilePage() {
     const [user, setUser] = useState({
-        name: "Usuario",
-        email: "usuario@ejemplo.com",
-        phone: "+34 000 000 000",
-        role: "Organizador",
+        nombre: "Cargando...",
+        email: "",
+        telefono: "",
+        rol: "Organizador",
         avatar: "/placeholder.svg"
     })
 
     const [isEditing, setIsEditing] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        // Cargar datos del login de localStorage
-        const storedUser = localStorage.getItem("user")
-        if (storedUser) {
-            const parsedUser = JSON.parse(storedUser)
-            setUser(prev => ({
-                ...prev,
-                name: parsedUser.name || prev.name,
-                email: parsedUser.email || prev.email
-            }))
+        const fetchProfile = async () => {
+            try {
+                const response = await api.get("/auth/perfil")
+                if (response.data) {
+                    setUser({
+                        nombre: response.data.nombre || "Usuario",
+                        email: response.data.email || "",
+                        telefono: response.data.telefono || "",
+                        rol: response.data.rol || "Organizador",
+                        avatar: "/placeholder.svg"
+                    })
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error)
+            } finally {
+                setIsLoading(false)
+            }
         }
+
+        fetchProfile()
     }, [])
 
-    const handleSave = () => {
-        setIsEditing(false)
-        // Actualizar localStorage con los nuevos datos
-        localStorage.setItem("user", JSON.stringify({
-            name: user.name,
-            email: user.email
-        }))
+    const handleSave = async () => {
+        try {
+            const response = await api.put("/auth/perfil", {
+                nombre: user.nombre,
+                email: user.email,
+                telefono: user.telefono,
+                rol: user.rol
+            })
+
+            if (response.data) {
+                // Actualizar localStorage para mantener sincronía en el resto de la app
+                const storedUser = localStorage.getItem("user")
+                if (storedUser) {
+                    const parsedUser = JSON.parse(storedUser)
+                    localStorage.setItem("user", JSON.stringify({
+                        ...parsedUser,
+                        name: response.data.nombre,
+                        email: response.data.email
+                    }))
+                }
+
+                setUser({
+                    ...user,
+                    nombre: response.data.nombre,
+                    email: response.data.email,
+                    telefono: response.data.telefono,
+                    rol: response.data.rol
+                })
+                setIsEditing(false)
+                alert("Perfil actualizado correctamente")
+            }
+        } catch (error) {
+            console.error("Error updating profile:", error)
+            alert("Error al actualizar el perfil")
+        }
+    }
+
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center">Cargando perfil...</div>
     }
 
     return (
@@ -56,7 +100,7 @@ export default function ProfilePage() {
                         <Avatar className="h-32 w-32 border-4 border-card shadow-xl">
                             <AvatarImage src={user.avatar} />
                             <AvatarFallback className="text-2xl bg-primary/10 text-primary font-bold">
-                                {user.name.substring(0, 2).toUpperCase()}
+                                {user.nombre.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
                         <Button
@@ -70,9 +114,9 @@ export default function ProfilePage() {
 
                     <div className="flex-1 space-y-2">
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                            <h2 className="text-2xl font-bold">{user.name}</h2>
+                            <h2 className="text-2xl font-bold">{user.nombre}</h2>
                             <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                                {user.role}
+                                {user.rol}
                             </Badge>
                         </div>
 
@@ -105,18 +149,18 @@ export default function ProfilePage() {
                                     <Label htmlFor="perf-name">Nombre Completo</Label>
                                     <Input
                                         id="perf-name"
-                                        value={user.name}
+                                        value={user.nombre}
                                         disabled={!isEditing}
-                                        onChange={(e) => setUser({ ...user, name: e.target.value })}
+                                        onChange={(e) => setUser({ ...user, nombre: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="perf-role">Cargo / Rol</Label>
                                     <Input
                                         id="perf-role"
-                                        value={user.role}
+                                        value={user.rol}
                                         disabled={!isEditing}
-                                        onChange={(e) => setUser({ ...user, role: e.target.value })}
+                                        onChange={(e) => setUser({ ...user, rol: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -138,10 +182,10 @@ export default function ProfilePage() {
                                         <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
                                             id="perf-phone"
-                                            value={user.phone}
+                                            value={user.telefono}
                                             disabled={!isEditing}
                                             className="pl-10"
-                                            onChange={(e) => setUser({ ...user, phone: e.target.value })}
+                                            onChange={(e) => setUser({ ...user, telefono: e.target.value })}
                                         />
                                     </div>
                                 </div>

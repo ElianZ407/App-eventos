@@ -23,29 +23,31 @@ interface EditTableModalProps {
 export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
     const [open, setOpen] = useState(false)
     const [formData, setFormData] = useState({
-        number: table.number.toString(),
-        capacity: table.capacity.toString(),
-        location: table.location,
+        numero: table.numero?.toString() || "",
+        capacidad: table.capacidad?.toString() || "",
+        ubicacion: table.ubicacion || "",
     })
-    const [guests, setGuests] = useState<string[]>(table.guests || [])
+    const [guests, setGuests] = useState<any[]>(table.invitados || [])
     const [newGuestName, setNewGuestName] = useState("")
 
     // Reset when modal opens
     useEffect(() => {
         if (open) {
             setFormData({
-                number: table.number.toString(),
-                capacity: table.capacity.toString(),
-                location: table.location,
+                numero: table.numero?.toString() || "",
+                capacidad: table.capacidad?.toString() || "",
+                ubicacion: table.ubicacion || "",
             })
-            setGuests(table.guests || [])
+            setGuests(table.invitados || [])
             setNewGuestName("")
         }
     }, [open, table])
 
     const handleAddGuest = () => {
+        // Por ahora mantenemos la lógica local si es necesario, 
+        // pero idealmente esto debería ser una llamada a la API por invitado.
         if (newGuestName.trim()) {
-            setGuests([...guests, newGuestName.trim()])
+            setGuests([...guests, { nombre: newGuestName.trim() }])
             setNewGuestName("")
         }
     }
@@ -58,25 +60,15 @@ export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
 
-        const capacityVal = parseInt(formData.capacity)
+        const capacityVal = parseInt(formData.capacidad)
         const assignedVal = guests.length
 
         const updatedTable = {
             ...table,
-            number: parseInt(formData.number),
-            capacity: capacityVal,
-            location: formData.location,
-            guests: guests,
-            assigned: assignedVal,
-        }
-
-        // Recalculate status
-        if (assignedVal >= capacityVal) {
-            updatedTable.status = "full"
-        } else if (assignedVal > 0) {
-            updatedTable.status = "partial"
-        } else {
-            updatedTable.status = "empty"
+            numero: parseInt(formData.numero),
+            capacidad: capacityVal,
+            ubicacion: formData.ubicacion,
+            // Nota: El backend actualmente no procesa 'invitados' en el PUT de mesa
         }
 
         if (onUpdateTable) onUpdateTable(updatedTable)
@@ -93,7 +85,7 @@ export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] flex flex-col max-h-[90vh]">
                 <DialogHeader>
-                    <DialogTitle>Mesa {table.number}</DialogTitle>
+                    <DialogTitle>Mesa {table.numero}</DialogTitle>
                     <DialogDescription>
                         Gestiona los detalles y la lista de invitados para esta mesa.
                     </DialogDescription>
@@ -103,33 +95,33 @@ export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
                         <div className="grid gap-4 border-b pb-6">
                             <h3 className="text-sm font-semibold flex items-center gap-2">Configuración General</h3>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-number" className="text-right">Número</Label>
+                                <Label htmlFor="edit-numero" className="text-right">Número</Label>
                                 <Input
-                                    id="edit-number"
+                                    id="edit-numero"
                                     type="number"
-                                    value={formData.number}
-                                    onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+                                    value={formData.numero}
+                                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                                     className="col-span-3 h-8 text-xs"
                                     required
                                 />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-capacity" className="text-right">Capacidad</Label>
+                                <Label htmlFor="edit-capacidad" className="text-right">Capacidad</Label>
                                 <Input
-                                    id="edit-capacity"
+                                    id="edit-capacidad"
                                     type="number"
-                                    value={formData.capacity}
-                                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                                    value={formData.capacidad}
+                                    onChange={(e) => setFormData({ ...formData, capacidad: e.target.value })}
                                     className="col-span-3 h-8 text-xs"
                                     required
                                 />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-location" className="text-right">Ubicación</Label>
+                                <Label htmlFor="edit-ubicacion" className="text-right">Ubicación</Label>
                                 <Input
-                                    id="edit-location"
-                                    value={formData.location}
-                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    id="edit-ubicacion"
+                                    value={formData.ubicacion}
+                                    onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
                                     className="col-span-3 h-8 text-xs"
                                     required
                                 />
@@ -140,7 +132,7 @@ export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
                             <h3 className="text-sm font-semibold flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Users className="h-4 w-4" />
-                                    Invitados ({guests.length}/{formData.capacity})
+                                    Invitados ({guests.length}/{formData.capacidad})
                                 </div>
                             </h3>
 

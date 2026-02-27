@@ -25,25 +25,26 @@ interface EditGuestModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onUpdateGuest?: (guest: any) => void
+    tables?: any[]
 }
 
-export function EditGuestModal({ guest, open, onOpenChange, onUpdateGuest }: EditGuestModalProps) {
+export function EditGuestModal({ guest, open, onOpenChange, onUpdateGuest, tables = [] }: EditGuestModalProps) {
     const [formData, setFormData] = useState({
-        name: "",
+        nombre: "",
         email: "",
-        phone: "",
-        status: "",
-        table: "",
+        telefono: "",
+        estado: "",
+        mesaId: "",
     })
 
     useEffect(() => {
         if (guest) {
             setFormData({
-                name: guest.name || "",
+                nombre: guest.nombre || "",
                 email: guest.email || "",
-                phone: guest.phone || "",
-                status: guest.status || "pending",
-                table: guest.table || "",
+                telefono: guest.telefono || "",
+                estado: guest.estado || "pendiente",
+                mesaId: guest.mesaId ? guest.mesaId.toString() : "none",
             })
         }
     }, [guest, open])
@@ -70,13 +71,13 @@ export function EditGuestModal({ guest, open, onOpenChange, onUpdateGuest }: Edi
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-name" className="text-right">
+                        <Label htmlFor="edit-nombre" className="text-right">
                             Nombre
                         </Label>
                         <Input
-                            id="edit-name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            id="edit-nombre"
+                            value={formData.nombre}
+                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                             className="col-span-3"
                             required
                         />
@@ -95,52 +96,52 @@ export function EditGuestModal({ guest, open, onOpenChange, onUpdateGuest }: Edi
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-phone" className="text-right">
+                        <Label htmlFor="edit-telefono" className="text-right">
                             Teléfono
                         </Label>
                         <Input
-                            id="edit-phone"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            id="edit-telefono"
+                            value={formData.telefono}
+                            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                             className="col-span-3"
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-status" className="text-right">
+                        <Label htmlFor="edit-estado" className="text-right">
                             Estado
                         </Label>
                         <Select
-                            value={formData.status}
-                            onValueChange={(value) => setFormData({ ...formData, status: value })}
+                            value={formData.estado}
+                            onValueChange={(value) => setFormData({ ...formData, estado: value })}
                         >
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Selecciona un estado" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="confirmed">Confirmado</SelectItem>
-                                <SelectItem value="pending">Pendiente</SelectItem>
-                                <SelectItem value="cancelled">Cancelado</SelectItem>
+                                <SelectItem value="confirmado">Confirmado</SelectItem>
+                                <SelectItem value="pendiente">Pendiente</SelectItem>
+                                <SelectItem value="cancelado">Cancelado</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-table" className="text-right">
+                        <Label htmlFor="edit-mesaId" className="text-right">
                             Mesa
                         </Label>
                         <Select
-                            value={formData.table}
-                            onValueChange={(value) => setFormData({ ...formData, table: value })}
+                            value={formData.mesaId}
+                            onValueChange={(value) => setFormData({ ...formData, mesaId: value })}
                         >
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Asignar mesa" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Mesa 1">Mesa 1</SelectItem>
-                                <SelectItem value="Mesa 2">Mesa 2</SelectItem>
-                                <SelectItem value="Mesa 3">Mesa 3</SelectItem>
-                                <SelectItem value="Mesa 4">Mesa 4</SelectItem>
-                                <SelectItem value="Mesa 5">Mesa 5</SelectItem>
-                                <SelectItem value="Sin asignar">Sin asignar</SelectItem>
+                                <SelectItem value="none">Sin asignar</SelectItem>
+                                {tables.map((table) => (
+                                    <SelectItem key={table.id} value={table.id.toString()}>
+                                        Mesa {table.numero} - {table.ubicacion || "Sin ubicación"}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
