@@ -1,5 +1,3 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -12,7 +10,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Edit, X, Plus, Users } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Edit, Users } from "lucide-react"
 import { useState, useEffect } from "react"
 
 interface EditTableModalProps {
@@ -27,10 +26,7 @@ export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
         capacidad: table.capacidad?.toString() || "",
         ubicacion: table.ubicacion || "",
     })
-    const [guests, setGuests] = useState<any[]>(table.invitados || [])
-    const [newGuestName, setNewGuestName] = useState("")
 
-    // Reset when modal opens
     useEffect(() => {
         if (open) {
             setFormData({
@@ -38,42 +34,22 @@ export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
                 capacidad: table.capacidad?.toString() || "",
                 ubicacion: table.ubicacion || "",
             })
-            setGuests(table.invitados || [])
-            setNewGuestName("")
         }
     }, [open, table])
 
-    const handleAddGuest = () => {
-        // Por ahora mantenemos la lógica local si es necesario, 
-        // pero idealmente esto debería ser una llamada a la API por invitado.
-        if (newGuestName.trim()) {
-            setGuests([...guests, { nombre: newGuestName.trim() }])
-            setNewGuestName("")
-        }
-    }
-
-    const handleRemoveGuest = (index: number) => {
-        const updatedGuests = guests.filter((_, i) => i !== index)
-        setGuests(updatedGuests)
-    }
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-
-        const capacityVal = parseInt(formData.capacidad)
-        const assignedVal = guests.length
-
         const updatedTable = {
             ...table,
             numero: parseInt(formData.numero),
-            capacidad: capacityVal,
+            capacidad: parseInt(formData.capacidad),
             ubicacion: formData.ubicacion,
-            // Nota: El backend actualmente no procesa 'invitados' en el PUT de mesa
         }
-
         if (onUpdateTable) onUpdateTable(updatedTable)
         setOpen(false)
     }
+
+    const invitados: any[] = table.invitados || []
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -83,105 +59,61 @@ export function EditTableModal({ table, onUpdateTable }: EditTableModalProps) {
                     Editar
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] flex flex-col max-h-[90vh]">
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Mesa {table.numero}</DialogTitle>
                     <DialogDescription>
-                        Gestiona los detalles y la lista de invitados para esta mesa.
+                        Edita los detalles de la mesa. Para asignar invitados, hazlo desde la página de Invitados.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto py-4">
-                    <form id="edit-table-form" onSubmit={handleSubmit} className="grid gap-6">
-                        <div className="grid gap-4 border-b pb-6">
-                            <h3 className="text-sm font-semibold flex items-center gap-2">Configuración General</h3>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-numero" className="text-right">Número</Label>
-                                <Input
-                                    id="edit-numero"
-                                    type="number"
-                                    value={formData.numero}
-                                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                                    className="col-span-3 h-8 text-xs"
-                                    required
-                                />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-capacidad" className="text-right">Capacidad</Label>
-                                <Input
-                                    id="edit-capacidad"
-                                    type="number"
-                                    value={formData.capacidad}
-                                    onChange={(e) => setFormData({ ...formData, capacidad: e.target.value })}
-                                    className="col-span-3 h-8 text-xs"
-                                    required
-                                />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-ubicacion" className="text-right">Ubicación</Label>
-                                <Input
-                                    id="edit-ubicacion"
-                                    value={formData.ubicacion}
-                                    onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
-                                    className="col-span-3 h-8 text-xs"
-                                    required
-                                />
+                <form id="edit-table-form" onSubmit={handleSubmit} className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit-numero" className="text-right">Número</Label>
+                        <Input
+                            id="edit-numero"
+                            type="number"
+                            value={formData.numero}
+                            onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                            className="col-span-3"
+                            required
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit-capacidad" className="text-right">Capacidad</Label>
+                        <Input
+                            id="edit-capacidad"
+                            type="number"
+                            value={formData.capacidad}
+                            onChange={(e) => setFormData({ ...formData, capacidad: e.target.value })}
+                            className="col-span-3"
+                            required
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit-ubicacion" className="text-right">Ubicación</Label>
+                        <Input
+                            id="edit-ubicacion"
+                            value={formData.ubicacion}
+                            onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
+                            className="col-span-3"
+                        />
+                    </div>
+
+                    {invitados.length > 0 && (
+                        <div className="grid gap-2 pt-2 border-t">
+                            <p className="text-sm font-medium flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                Invitados asignados ({invitados.length}/{formData.capacidad})
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {invitados.map((inv: any, i: number) => (
+                                    <Badge key={i} variant="secondary">{inv.nombre}</Badge>
+                                ))}
                             </div>
                         </div>
-
-                        <div className="grid gap-4">
-                            <h3 className="text-sm font-semibold flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4" />
-                                    Invitados ({guests.length}/{formData.capacidad})
-                                </div>
-                            </h3>
-
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Nombre del invitado..."
-                                    value={newGuestName}
-                                    onChange={(e) => setNewGuestName(e.target.value)}
-                                    className="flex-1 h-8 text-xs"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault()
-                                            handleAddGuest()
-                                        }
-                                    }}
-                                />
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="secondary"
-                                    className="h-8 w-8 p-0"
-                                    onClick={handleAddGuest}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
-
-                            <div className="grid gap-2 max-h-[200px] overflow-y-auto pr-2">
-                                {guests.length > 0 ? (
-                                    guests.map((guest, index) => (
-                                        <div key={index} className="flex items-center justify-between bg-secondary/50 p-2 rounded-md group">
-                                            <span className="text-xs font-medium">{guest}</span>
-                                            <button
-                                                type="button"
-                                                className="text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                                                onClick={() => handleRemoveGuest(index)}
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </button>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-xs text-muted-foreground italic text-center py-4">Sin invitados asignados</p>
-                                )}
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <DialogFooter className="pt-4 border-t">
+                    )}
+                </form>
+                <DialogFooter>
                     <Button form="edit-table-form" type="submit" className="w-full">Guardar Cambios</Button>
                 </DialogFooter>
             </DialogContent>

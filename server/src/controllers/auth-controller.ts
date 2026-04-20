@@ -9,21 +9,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-dev';
 export const registrar = async (req: Request, res: Response) => {
     try {
         const { email, password, nombre } = req.body;
-
         const existe = await prisma.usuario.findUnique({ where: { email } });
-        if (existe) {
-            return res.status(400).json({ error: 'El usuario ya existe' });
-        }
+        if (existe) return res.status(400).json({ error: 'El usuario ya existe' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const usuario = await prisma.usuario.create({
-            data: {
-                email,
-                password: hashedPassword,
-                nombre,
-            },
-        });
-
+        const usuario = await prisma.usuario.create({ data: { email, password: hashedPassword, nombre } });
         res.status(201).json({ message: 'Usuario registrado correctamente', id: usuario.id });
     } catch (error) {
         console.error(error);
@@ -34,28 +24,14 @@ export const registrar = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
-
         const usuario = await prisma.usuario.findUnique({ where: { email } });
-        if (!usuario || !usuario.password) {
-            return res.status(401).json({ error: 'Credenciales inválidas' });
-        }
+        if (!usuario || !usuario.password) return res.status(401).json({ error: 'Credenciales inválidas' });
 
         const validPassword = await bcrypt.compare(password, usuario.password);
-        if (!validPassword) {
-            return res.status(401).json({ error: 'Credenciales inválidas' });
-        }
+        if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas' });
 
         const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: '1d' });
-
-        res.json({
-            token,
-            usuario: {
-                id: usuario.id,
-                nombre: usuario.nombre,
-                email: usuario.email,
-                rol: usuario.rol
-            }
-        });
+        res.json({ token, usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email, rol: usuario.rol } });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al iniciar sesión' });
@@ -67,13 +43,7 @@ export const getPerfil = async (req: any, res: Response) => {
         const usuarioId = req.usuario?.id;
         const usuario = await prisma.usuario.findUnique({
             where: { id: usuarioId },
-            select: {
-                id: true,
-                nombre: true,
-                email: true,
-                rol: true,
-                telefono: true
-            }
+            select: { id: true, nombre: true, email: true, rol: true, telefono: true }
         });
         res.json(usuario);
     } catch (error) {
@@ -85,26 +55,32 @@ export const updatePerfil = async (req: any, res: Response) => {
     try {
         const usuarioId = req.usuario?.id;
         const { nombre, email, telefono, rol } = req.body;
-
         const usuarioActualizado = await prisma.usuario.update({
             where: { id: usuarioId },
-            data: {
-                nombre,
-                email,
-                telefono,
-                rol
-            },
-            select: {
-                id: true,
-                nombre: true,
-                email: true,
-                rol: true,
-                telefono: true
-            }
+            data: { nombre, email, telefono, rol },
+            select: { id: true, nombre: true, email: true, rol: true, telefono: true }
         });
-
         res.json(usuarioActualizado);
     } catch (error) {
         res.status(500).json({ error: 'Error al actualizar el perfil' });
+    }
+};
+
+export const cambiarPassword = async (req: any, res: Response) => {
+    try {
+        const usuarioId = req.usuario?.id;
+        const { passwordActual, passwordNueva } = req.body;
+
+        const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+        if (!usuario || !usuario.password) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const valida = await bcrypt.compare(passwordActual, usuario.password);
+        if (!valida) return res.status(400).json({ error: 'La contraseña actual es incorrecta' });
+
+        const nuevaHash = await bcrypt.hash(passwordNueva, 10);
+        await prisma.usuario.update({ where: { id: usuarioId }, data: { password: nuevaHash } });
+        res.json({ message: 'Contraseña actualizada correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al cambiar la contraseña' });
     }
 };

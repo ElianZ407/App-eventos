@@ -209,3 +209,35 @@ export const rsvpInvitado = async (req: any, res: Response) => {
         res.status(500).send('Error al procesar tu respuesta');
     }
 };
+
+export const enviarTodasInvitaciones = async (req: AuthRequest, res: Response) => {
+    try {
+        const { eventoId } = req.body;
+        const usuarioId = req.usuario?.id;
+        if (!usuarioId) return res.status(401).json({ error: 'No autorizado' });
+
+        const evento = await prisma.evento.findFirst({ where: { id: Number(eventoId), usuarioId } });
+        if (!evento) return res.status(404).json({ error: 'Evento no encontrado' });
+
+        const invitados = await prisma.invitado.findMany({
+            where: { eventoId: Number(eventoId), estado: 'pendiente', email: { not: null } }
+        });
+
+        if (invitados.length === 0) {
+            return res.json({ message: 'No hay invitados pendientes con email', enviados: 0, fallidos: 0 });
+        }
+
+        let enviados = 0;
+        let fallidos = 0;
+        for (const invitado of invitados) {
+            if (!invitado.email) continue;
+            const result = await sendEventInvitation(invitado.nombre, evento.nombre, invitado.email, invitado.id);
+            if (result.success) enviados++;
+            else fallidos++;
+        }
+
+        res.json({ message: `Invitaciones enviadas: ${enviados}, fallidas: ${fallidos}`, enviados, fallidos });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al enviar invitaciones' });
+    }
+};
