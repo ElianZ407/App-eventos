@@ -4,6 +4,7 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
 import { useTheme } from "./theme-provider"
+import { useUser } from "@/contexts/user-context"
 
 export function EventSidebar() {
   const location = useLocation()
@@ -11,52 +12,23 @@ export function EventSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
-  const [user, setUser] = useState<{ name?: string, email?: string } | null>(null)
+  const { user, logout } = useUser()
 
-  useState(() => {
-    const stored = localStorage.getItem("user")
-    if (stored) {
-      setUser(JSON.parse(stored))
-    }
-  })
-
-  // Intentar extraer el ID del evento de la URL si estamos en una página de evento
-  const eventMatch = pathname.match(/\/events\/([^\/]+)/)
+  const eventMatch = pathname.match(/\/events\/([^/]+)/)
   const eventId = eventMatch ? eventMatch[1] : null
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    {
-      name: "Invitados",
-      href: eventId ? `/events/${eventId}/guests` : "/guests",
-      icon: Users
-    },
-    {
-      name: "Mesas",
-      href: eventId ? `/events/${eventId}/tables` : "/tables",
-      icon: UtensilsCrossed
-    },
+    { name: "Invitados", href: eventId ? `/events/${eventId}/guests` : "/guests", icon: Users },
+    { name: "Mesas", href: eventId ? `/events/${eventId}/tables` : "/tables", icon: UtensilsCrossed },
     { name: "Perfil", href: "/profile", icon: User },
   ]
 
-  const handleLogout = () => {
-    localStorage.removeItem("user")
-    navigate("/login")
-  }
+  const handleLogout = () => { logout(); navigate("/login") }
 
   return (
-    <div
-      className={cn(
-        "relative flex h-screen flex-col border-r border-border bg-card transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-[80px]" : "w-64",
-      )}
-    >
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute -right-4 top-20 z-10 h-8 w-8 rounded-full border border-border bg-card shadow-md hover:bg-secondary"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
+    <div className={cn("relative flex h-screen flex-col border-r border-border bg-card transition-all duration-300 ease-in-out", isCollapsed ? "w-[80px]" : "w-64")}>
+      <Button variant="ghost" size="icon" className="absolute -right-4 top-20 z-10 h-8 w-8 rounded-full border border-border bg-card shadow-md hover:bg-secondary" onClick={() => setIsCollapsed(!isCollapsed)}>
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
 
@@ -69,20 +41,8 @@ export function EventSidebar() {
         {navigation.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
-
           return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isCollapsed && "justify-center px-0",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-              )}
-              title={isCollapsed ? item.name : ""}
-            >
+            <Link key={item.name} to={item.href} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors", isCollapsed && "justify-center px-0", isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground")} title={isCollapsed ? item.name : ""}>
               <Icon className="h-5 w-5 shrink-0" />
               {!isCollapsed && <span className="truncate">{item.name}</span>}
             </Link>
@@ -91,51 +51,20 @@ export function EventSidebar() {
       </nav>
 
       <div className={cn("px-4 pb-4 space-y-2", isCollapsed && "flex flex-col items-center")}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "w-full justify-start gap-3 text-muted-foreground hover:bg-secondary hover:text-foreground",
-            isCollapsed && "justify-center px-0 w-10"
-          )}
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? (
-            <>
-              <Sun className="h-5 w-5 shrink-0" />
-              {!isCollapsed && <span>Modo Claro</span>}
-            </>
-          ) : (
-            <>
-              <Moon className="h-5 w-5 shrink-0" />
-              {!isCollapsed && <span>Modo Oscuro</span>}
-            </>
-          )}
+        <Button variant="ghost" size="sm" className={cn("w-full justify-start gap-3 text-muted-foreground hover:bg-secondary hover:text-foreground", isCollapsed && "justify-center px-0 w-10")} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+          {theme === "dark" ? <><Sun className="h-5 w-5 shrink-0" />{!isCollapsed && <span>Modo Claro</span>}</> : <><Moon className="h-5 w-5 shrink-0" />{!isCollapsed && <span>Modo Oscuro</span>}</>}
         </Button>
       </div>
 
       <div className={cn("border-t border-border p-4", isCollapsed && "flex justify-center")}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-            {user?.name?.substring(0, 2).toUpperCase() || "U"}
+            {user?.nombre?.substring(0, 2).toUpperCase() || "U"}
           </div>
-          {!isCollapsed && (
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium text-foreground">{user?.name || "Usuario"}</p>
-              <p className="truncate text-xs text-muted-foreground">{user?.email || "usuario@eventflow.com"}</p>
-            </div>
-          )}
-          {!isCollapsed && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          )}
+          {!isCollapsed && <div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground">{user?.nombre || "Usuario"}</p><p className="truncate text-xs text-muted-foreground">{user?.email || ""}</p></div>}
+          {!isCollapsed && <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleLogout}><LogOut className="h-4 w-4" /></Button>}
         </div>
-        {isCollapsed && (
-          <Button variant="ghost" size="icon" className="mt-2 h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" />
-          </Button>
-        )}
+        {isCollapsed && <Button variant="ghost" size="icon" className="mt-2 h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleLogout}><LogOut className="h-4 w-4" /></Button>}
       </div>
     </div>
   )

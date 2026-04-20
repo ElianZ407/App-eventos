@@ -275,6 +275,16 @@ export default function NewEventPage() {
 
                             {currentStep === 2 && (
                                 <>
+                                    <LocationPicker
+                                        onSelect={(loc) => setFormData(p => ({
+                                            ...p,
+                                            lugarNombre: loc.lugarNombre || p.lugarNombre,
+                                            direccion: loc.direccion,
+                                            ciudad: loc.ciudad,
+                                            codigoPostal: loc.codigoPostal,
+                                            pais: loc.pais,
+                                        }))}
+                                    />
                                     <div className="space-y-2">
                                         <Label htmlFor="venue-name">Nombre del Lugar *</Label>
                                         <Input

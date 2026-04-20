@@ -29,12 +29,24 @@ interface LocationPickerProps {
     initialLon?: number
 }
 
-// Subcomponent: moves the map view when coordinates change
+// Subcomponent: fixes size on mount and moves view when coords change
 function MapController({ lat, lon }: { lat: number; lon: number }) {
     const map = useMap()
     useEffect(() => {
+        setTimeout(() => map.invalidateSize(), 0)
+    }, [map])
+    useEffect(() => {
         map.setView([lat, lon], 16)
     }, [lat, lon, map])
+    return null
+}
+
+// Subcomponent: invalidates map size on first render (fixes partial tile loading)
+function MapInvalidator() {
+    const map = useMap()
+    useEffect(() => {
+        setTimeout(() => map.invalidateSize(), 100)
+    }, [map])
     return null
 }
 
@@ -211,6 +223,7 @@ export function LocationPicker({ onSelect, initialLat = 40.4168, initialLon = -3
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
+                    <MapInvalidator />
                     <ClickHandler onMapClick={handleMapClick} />
                     {markerPos && <MapController lat={markerPos[0]} lon={markerPos[1]} />}
                     {markerPos && <Marker position={markerPos} />}

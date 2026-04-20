@@ -6,9 +6,11 @@ import { Calendar, Mail, Lock, ArrowRight } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import api from "@/lib/api"
+import { useUser } from "@/contexts/user-context"
 
 export default function LoginPage() {
     const navigate = useNavigate()
+    const { setUser } = useUser()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -24,9 +26,7 @@ export default function LoginPage() {
         try {
             const response = await api.post("/auth/login", { email, password })
             const { token, usuario } = response.data
-
-            // Guardamos el token y la info del usuario
-            localStorage.setItem("user", JSON.stringify({ ...usuario, token }))
+            setUser({ ...usuario, token })
             navigate("/")
         } catch (err: any) {
             console.error(err)
