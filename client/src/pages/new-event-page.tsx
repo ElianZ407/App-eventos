@@ -9,6 +9,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
+import { LocationPicker } from "@/components/location-picker"
 
 const EVENT_TYPES = [
     "Boda",
